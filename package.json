@@ -1,0 +1,17 @@
+{
+  "name": "parserloader",
+  "description": "Helper to setup and run instances of the HtbaH MediaWiki-to-PDF parser",
+  "version": "0.1.0",
+  "homepage": "https://by.vincent.mahn.ke/",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ViMaSter/parserloader.git"
+  },
+  "dependencies": {
+    "del": "^3.0.0"
+  }
+}
