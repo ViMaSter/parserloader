@@ -1,7 +1,14 @@
+console.log("---------- MONITOR START ----------")
 const process = require("process");
+process.on('exit', function()
+{
+	console.log("---------- MONITOR  END  ----------")
+});
+
 const util = require("util");
 const path = require("path");
 const fs = require("fs");
+const exec = require("child_process").exec;
 const execSync = require("child_process").execSync;
 
 class Process
@@ -49,6 +56,11 @@ class Process
 		return this.PID > 0 && fs.existsSync("/proc/"+this.PID);
 	}
 
+	toString()
+	{
+		return `[PID ${this.PID > -1 ? this.PID : "NONE"} (instance ${this.Instance} - hash ${this.Hash})]`;
+	}
+
 	static AreSameStem(processA, processB)
 	{
 		return processA.Instance == processB.Instance && processA.Hash == processB.Hash;
@@ -77,11 +89,18 @@ function getCurrentRunningProcesses()
 
 function getRequestedProcesses()
 {
-	const servicesConfigContents = JSON.parse(fs.readFileSync("./services_config.json", 'utf8'));
 	let processes = [];
-	for (instance in servicesConfigContents)
+
+	const servicesConfigContents = fs.readFileSync(path.join(__dirname, "services_config.json"), 'utf8');
+	if (!servicesConfigContents)
 	{
-		processes.push(Process.FromData(instance, servicesConfigContents[instance]));
+		return processes;
+	}
+
+	const parsedServicesConfigContents = JSON.Parse(servicesConfigContents);
+	for (instance in parsedServicesConfigContents)
+	{
+		processes.push(Process.FromData(instance, parsedServicesConfigContents[instance]));
 	}
 	return processes;
 }
@@ -90,7 +109,7 @@ function compareProcesses()
 {
 	let status =
 	{
-		"superflous": [],
+		"superfluous": [],
 		"missing": [],
 		"ok": []
 	};
@@ -112,7 +131,7 @@ function compareProcesses()
 			status["missing"].push(requestedProcesses[requestedIndex]);
 		}
 	}
-	status["superflous"] = runningProcesses.filter(function(runningProcess) {
+	status["superfluous"] = runningProcesses.filter(function(runningProcess) {
 		for (const index in requestedProcesses)
 		{
 			if (Process.AreSameStem(runningProcess, requestedProcesses[index]))
@@ -127,16 +146,55 @@ function compareProcesses()
 	return status;
 }
 
-console.log(compareProcesses());
+let handler =
+{
+	"superfluous": function(process)
+	{
+		console.log(`--- Attempting to kill superfluous process ${process}`);
+		console.log(execSync("kill -9 "+process.PID).toString());
+		console.log("---------")
+	},
+	"missing": function(process)
+	{
+		let errorHandler = function (error, stdout, stderr) {
+			if (error) {
+				console.error(`+++ ERROR ${process}: ${error}`);
+				return;
+			}
+			console.log(`stdout: ${stdout}`);
+			console.log(`stderr: ${stderr}`);
+		};
 
-// update():
-// load config 
-// check current processes
-//
+		console.log(`+++ ${process} Attempting to spawn process`);
+		const targetPath = path.join(__dirname, "..", process.Instance, process.Hash);
+		if (!fs.existsSync(path.join(targetPath, ".git")))
+		{
+			console.error(`+++ ${process} can not be spawned, as ${targetPath} does not exist and/or contains no cloned repository!`)
+		}
+		const command = `node ${targetPath}/index.js`;
+		console.log(`+++ ${process} COMMAND: '${command}'`);
+		const newProcess = exec(command, {
+			cwd: targetPath
+		}, errorHandler.bind(process));
+		console.log("+++++++++")
+	},
+	"ok": function(process)
+	{
+		// void by design
+		console.log(`||| ${process} matches requirements.`);
+		console.log("|||||||||")
+	}
+}
 
-// refresh():
-// exit superflous processes
-// start new processes
+function handleStatus(comparisionResults)
+{
+	for (key in comparisionResults)
+	{
+		for (index in comparisionResults[key])
+		{
+			handler[key](comparisionResults[key][index]);
+		}
+	}
+}
 
-// update();
-// refresh();
+handleStatus(compareProcesses());

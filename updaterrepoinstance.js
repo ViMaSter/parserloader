@@ -90,82 +90,26 @@ function runInstall()
 	return true;
 }
 
-function createService()
-{
-	// Create service based on new instance
-	const templateContents = fs.readFileSync("./PDFparser.template.service", 'utf8');
-	const preparedContents = util.format(
-		templateContents,
-		CONFIG.INSTANCE,
-		CONFIG.COMMITHASH,
-		TARGETPATH,
-		TARGETPATH,
-		TARGETPATH
-	);
-
-	const filename = util.format("/etc/systemd/system/"+serviceFormat+".service", CONFIG.INSTANCE, CONFIG.COMMITHASH);
-
-	console.log("--- FILE: "+filename+" ---");
-	console.log("--- WRITING TO FILE START ---");
-	console.log(preparedContents);
-	console.log("--- WRITING TO FILE  END  ---");
-
-	fs.writeFileSync(filename, preparedContents, {flag: 'w'});
-
-	return true;
-}
-
-function switchServices()
-{
-	const services = execSync('service --status-all');
-	const expression = new RegExp(util.format(serviceFormat, CONFIG.INSTANCE, "-([0-9a-fA-F]*)"), "g");
-	const result = services.toString().match(expression);
-	if (result && result.length > 1)
+function updateService()
+{	
+	const servicesConfigContents = fs.readFileSync(path.join(__dirname, "services_config.json"), 'utf8');
+	let parsedServicesConfigContents = {};
+	if (servicesConfigContents)
 	{
-		const oldInstance = util.format(serviceFormat, CONFIG.INSTANCE, result[1]);
-		[
-			"systemctl stop %s",
-			"systemctl disable %s",
-			"rm /etc/systemd/system/%s",
-			"systemctl daemon-reload",
-			"systemctl reset-failed",
-		].forEach(function(command)
-		{
-			try
-			{
-				execSync(util.format(command, oldInstance));
-			}
-			catch (exeception)
-			{
-				console.log("---- "+command)
-				console.log("---- ERROR RUNNING EXIT COMMAND START ----")
-				console.log(exeception)
-				console.log("---- ERROR RUNNING EXIT COMMAND  END  ----")
-			}
-		});
+		parsedServicesConfigContents = JSON.parse(servicesConfigContents);
 	}
-
-	const newInstance = util.format(serviceFormat, CONFIG.INSTANCE, CONFIG.COMMITHASH);
-	[
-		"systemctl enable %s",
-		"systemctl start %s",
-	].forEach(function(command)
-	{
-		try
-		{
-	 		execSync(util.format(command, newInstance));
-		}
-			catch (exeception)
-			{
-				console.log("---- "+command)
-				console.log("---- ERROR RUNNING STARTUP COMMAND START ----")
-				console.log(exeception)
-				console.log("---- ERROR RUNNING STARTUP COMMAND  END  ----")
-			}
-	});
-
+	parsedServicesConfigContents[CONFIG.INSTANCE] = CONFIG.COMMITHASH;
+	console.log("--- Updating service list...");
+	console.log(parsedServicesConfigContents);
+	console.log("---");
+	console.log("--- Restarting parser monitor service...");
+	fs.writeFileSync(path.join(__dirname, "services_config.json"), JSON.stringify(parsedServicesConfigContents), {flag: 'w'});
+	const reloadParserMonitor = execSync("sudo /bin/systemctl restart parsermonitor.service");	
+	console.log(reloadParserMonitor.toString());
+	console.log("---");
 }
-/*
+
+
 if (!createFolders())
 {
 	cleanup();
@@ -180,13 +124,8 @@ if (!runInstall())
 {
 	cleanup();
 	return;
-}*/
-if (!createService())
-{
-	cleanup();
-	return;
 }
-if (!switchServices())
+if (!updateService())
 {
 	cleanup();
 	return;
