@@ -97,7 +97,7 @@ function getRequestedProcesses()
 		return processes;
 	}
 
-	const parsedServicesConfigContents = JSON.Parse(servicesConfigContents);
+	const parsedServicesConfigContents = JSON.parse(servicesConfigContents);
 	for (instance in parsedServicesConfigContents)
 	{
 		processes.push(Process.FromData(instance, parsedServicesConfigContents[instance]));
