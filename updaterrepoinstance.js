@@ -92,7 +92,7 @@ function runInstall()
 
 function updateService()
 {	
-	const servicesConfigContents = fs.readFileSync(path.join(__dirname, "services_config.json"), 'utf8');
+    const servicesConfigContents = fs.readFileSync(path.join(__dirname, "service_config.json"), 'utf8');
 	let parsedServicesConfigContents = {};
 	if (servicesConfigContents)
 	{
@@ -103,7 +103,7 @@ function updateService()
 	console.log(parsedServicesConfigContents);
 	console.log("---");
 	console.log("--- Restarting parser monitor service...");
-	fs.writeFileSync(path.join(__dirname, "services_config.json"), JSON.stringify(parsedServicesConfigContents), {flag: 'w'});
+	fs.writeFileSync(path.join(__dirname, "service_config.json"), JSON.stringify(parsedServicesConfigContents), {flag: 'w'});
 	const reloadParserMonitor = execSync("sudo /bin/systemctl restart parsermonitor.service");	
 	console.log(reloadParserMonitor.toString());
 	console.log("---");
