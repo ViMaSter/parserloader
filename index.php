@@ -128,7 +128,12 @@
 			$serviceConfig[$webHookContent["ref"]] = $webHookContent["head"];
 			$newServiceConfig = json_encode($serviceConfig);
 			file_put_contents("./service_config.json", $newServiceConfig, LOCK_EX);
-
+			exec(sprintf("node %s/updaterrepoinstance.js %s %s %s &",
+				dirname(__FILE__),
+				$webHookContent["repository"]["clone_url"],
+				$webHookContent["ref"],
+				$webHookContent["head"]
+			));
 			error_log(sprintf("Github WebHook finished successfully. Reloading service. (Result %s)", exec("systemctl reload node")));
 		}
 	}
