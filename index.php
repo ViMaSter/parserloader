@@ -68,7 +68,7 @@
 	if ($configParser->validateHash($entityBody, substr($headers["X-Hub-Signature"], 5)))
 	{
 		$webHookContent = json_decode(urldecode(substr($entityBody, 8)), true);
-+       if (!$configParser->branchIsWhitelisted($webHookContent["ref"]))
+        if (!$configParser->branchIsWhitelisted($webHookContent["ref"]))
 		{
 			printf(
 				"Github WebHook reported a push onto a branch we're not concerned about! (branch: %s)\r\n",
