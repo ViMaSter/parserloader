@@ -171,7 +171,7 @@ let handler =
 		{
 			console.error(`+++ ${process} can not be spawned, as ${targetPath} does not exist and/or contains no cloned repository!`)
 		}
-		const command = `node ${targetPath}/index.js`;
+		const command = `npm run service`;
 		console.log(`+++ ${process} COMMAND: '${command}'`);
 		const newProcess = exec(command, {
 			cwd: targetPath
