@@ -91,7 +91,7 @@ function getRequestedProcesses()
 {
 	let processes = [];
 
-	const servicesConfigContents = fs.readFileSync(path.join(__dirname, "services_config.json"), 'utf8');
+	const servicesConfigContents = fs.readFileSync(path.join(__dirname, "service_config.json"), 'utf8');
 	if (!servicesConfigContents)
 	{
 		return processes;
