@@ -139,13 +139,13 @@
 				$webHookContent["repository"]["clone_url"],
 				$webHookContent["ref"],
 				$webHookContent["after"]
-			)
-			exec(sprintf("node %s/updaterrepoinstance.js %s %s %s &",
+			);
+			printf(exec(sprintf("node %s/updaterrepoinstance.js %s %s %s &",
 				dirname(__FILE__),
 				$webHookContent["repository"]["clone_url"],
 				$webHookContent["ref"],
 				$webHookContent["after"]
-			));
+			)));
 			printf("Github WebHook finished successfully. Reloading service. (Result %s)\r\n", exec("systemctl reload node"));
 		}
 	}
